@@ -66,205 +66,230 @@
 </div>
 
 <script>
-    const tecnicas = [
-        "katadori-menuchi nikkyo omote ya ura",
-        "katadori-menuchi iriminague",
-        "katadori-menuchi shijonague omote",
-        "katadori-menuchi kotegaeshi",
-        "katadori-menuchi koshinague",
-        "chudan-tsuki - medio",
-        "chudan-tsuki ikkyo omote ya ura",
-        "chudan-tsuki kotegaeshi",
-        "chudan-tsuki sotokaitennague",
-        "chudan-tsuki hijikimeosae",
-        "chudan-tsuki uchikaiten sankyo",
-        "jodan-tsuki - arriba",
-        "jodan-tsuki ikkyo omote ya ura",
-        "jodan-tsuki shijonague omote",
-        "maegueri iriminage",
-        "maegueri kokyu-ho",
-        "ushirowaza ryokatadori ikkyo omote",
-        "ushirowaza ryokatadori kokyunague",
-        "ushirowaza ryokatadori kokyu-ho",
-        "ushirowaza ryokatadori aikiotoshi",
-        "eridori ikkyo",
-        "katatedori-kubishime sankyo",
-        "katatedori-kubishime koshinague",
-        "katatedori-kubishime kokyonague",
-        "hanmihandachiwaza ryotedori shijonague omote ya ura",
-        "hanmihandachiwaza ryotedori kokyunague",
-        "hanmihandachiwaza shomen-uchi iriminague",
-        "chiuwaza shomen-uchi",
-        "chuiuwaza ushirowaza toriwaza"
-    ];
+    document.addEventListener("DOMContentLoaded", function () {
+        const tecnicas = [
+            "katadori-menuchi nikkyo omote ya ura",
+            "katadori-menuchi iriminague",
+            "katadori-menuchi shijonague omote",
+            "katadori-menuchi kotegaeshi",
+            "katadori-menuchi koshinague",
+            "chudan-tsuki - medio",
+            "chudan-tsuki ikkyo omote ya ura",
+            "chudan-tsuki kotegaeshi",
+            "chudan-tsuki sotokaitennague",
+            "chudan-tsuki hijikimeosae",
+            "chudan-tsuki uchikaiten sankyo",
+            "jodan-tsuki - arriba",
+            "jodan-tsuki ikkyo omote ya ura",
+            "jodan-tsuki shijonague omote",
+            "maegueri iriminage",
+            "maegueri kokyu-ho",
+            "ushirowaza ryokatadori ikkyo omote",
+            "ushirowaza ryokatadori kokyunague",
+            "ushirowaza ryokatadori kokyu-ho",
+            "ushirowaza ryokatadori aikiotoshi",
+            "eridori ikkyo",
+            "katatedori-kubishime sankyo",
+            "katatedori-kubishime koshinague",
+            "katatedori-kubishime kokyonague",
+            "hanmihandachiwaza ryotedori shijonague omote ya ura",
+            "hanmihandachiwaza ryotedori kokyunague",
+            "hanmihandachiwaza shomen-uchi iriminague",
+            "chiuwaza shomen-uchi",
+            "chuiuwaza ushirowaza toriwaza"
+        ];
 
-    let index = -1;
-    let vocesDisponibles = [];
-    let tecnicasPendientesRandom = [...tecnicas];
-    let tecnicaActual = "";
-    let autoTimer = null;
-    let esModoAuto = false;
+        let index = -1;
+        let vocesDisponibles = [];
+        let tecnicasPendientesRandom = [...tecnicas];
+        let tecnicaActual = "";
+        let autoTimer = null;
+        let esModoAuto = false;
 
-    function cargarVoces() {
-        if (!('speechSynthesis' in window)) return;
+        const synth = window.speechSynthesis;
 
-        vocesDisponibles = speechSynthesis.getVoices();
-        const selectVoz = document.getElementById("voz");
+        function cargarVoces() {
+            if (!synth) return;
 
-        if (!vocesDisponibles || vocesDisponibles.length === 0) {
-            selectVoz.innerHTML = '<option value="">Voz predeterminada del sistema</option>';
-            return;
+            vocesDisponibles = synth.getVoices() || [];
+            const selectVoz = document.getElementById("voz");
+            if (!selectVoz) return;
+
+            if (vocesDisponibles.length === 0) {
+                selectVoz.innerHTML = '<option value="">Voz predeterminada del sistema</option>';
+                return;
+            }
+
+            let vocesEspanyol = vocesDisponibles.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+            if (vocesEspanyol.length === 0) vocesEspanyol = vocesDisponibles;
+
+            const valorPrevio = selectVoz.value;
+            selectVoz.innerHTML = "";
+
+            vocesEspanyol.forEach(voz => {
+                const option = document.createElement("option");
+                option.value = voz.name;
+                option.textContent = `${voz.name} (${voz.lang})`;
+                selectVoz.appendChild(option);
+            });
+
+            if (valorPrevio && vocesEspanyol.some(v => v.name === valorPrevio)) {
+                selectVoz.value = valorPrevio;
+            }
         }
 
-        let vocesEspanyol = vocesDisponibles.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
-        if (vocesEspanyol.length === 0) vocesEspanyol = vocesDisponibles;
-
-        const valorPrevio = selectVoz.value;
-        selectVoz.innerHTML = "";
-
-        vocesEspanyol.forEach(voz => {
-            const option = document.createElement("option");
-            option.value = voz.name;
-            option.textContent = `${voz.name} (${voz.lang})`;
-            selectVoz.appendChild(option);
-        });
-
-        if (valorPrevio && vocesEspanyol.some(v => v.name === valorPrevio)) {
-            selectVoz.value = valorPrevio;
-        }
-    }
-
-    function hablar(texto, alTerminar) {
-        if (!('speechSynthesis' in window)) return;
-
-        window.speechSynthesis.resume();
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(texto);
-        const selectVoz = document.getElementById("voz");
-        const velocidad = parseFloat(document.getElementById("velocidad").value);
-
-        utterance.lang = 'es-ES';
-        utterance.rate = velocidad;
-
-        if (selectVoz.value && vocesDisponibles.length > 0) {
-            const vozSeleccionada = vocesDisponibles.find(v => v.name === selectVoz.value);
-            if (vozSeleccionada) utterance.voice = vozSeleccionada;
-        }
-
-        let finalizado = false;
-        const ejecutarFinal = () => {
-            if (!finalizado) {
-                finalizado = true;
+        function hablar(texto, alTerminar) {
+            if (!synth) {
                 if (alTerminar) alTerminar();
+                return;
             }
-        };
 
-        utterance.onend = ejecutarFinal;
-        utterance.onerror = ejecutarFinal;
+            try {
+                synth.resume();
+                synth.cancel();
+            } catch (e) {}
 
-        const tiempoEstimado = (texto.length * 120 / velocidad) + 1500;
-        setTimeout(ejecutarFinal, tiempoEstimado);
+            // Safari requiere instanciación limpia por cada llamada
+            const utterance = new SpeechSynthesisUtterance(texto);
+            const selectVoz = document.getElementById("voz");
+            const velocidad = parseFloat(document.getElementById("velocidad").value) || 0.75;
 
-        window.speechSynthesis.speak(utterance);
-    }
+            utterance.lang = 'es-ES';
+            utterance.rate = velocidad;
 
-    function actualizarProgreso(restantes) {
-        document.getElementById("progreso").innerText = `Restantes en este bloque: ${restantes} de ${tecnicas.length}`;
-    }
-
-    function obtenerSiguienteTecnica() {
-        const modo = document.getElementById("modo").value;
-
-        if (modo === "orden") {
-            index++;
-            if (index >= tecnicas.length) index = 0;
-            actualizarProgreso(tecnicas.length - index);
-            return tecnicas[index];
-        } else {
-            if (tecnicasPendientesRandom.length === 0) {
-                tecnicasPendientesRandom = [...tecnicas];
+            if (selectVoz && selectVoz.value && vocesDisponibles.length > 0) {
+                const vozSeleccionada = vocesDisponibles.find(v => v.name === selectVoz.value);
+                if (vozSeleccionada) utterance.voice = vozSeleccionada;
             }
-            const randomIndex = Math.floor(Math.random() * tecnicasPendientesRandom.length);
-            const seleccionada = tecnicasPendientesRandom.splice(randomIndex, 1)[0];
-            actualizarProgreso(tecnicasPendientesRandom.length);
-            return seleccionada;
+
+            let finalizado = false;
+            const ejecutarFinal = () => {
+                if (!finalizado) {
+                    finalizado = true;
+                    if (alTerminar) alTerminar();
+                }
+            };
+
+            utterance.onend = ejecutarFinal;
+            utterance.onerror = ejecutarFinal;
+
+            // Fallback para bug de Safari donde 'onend' a veces no dispara
+            const tiempoEstimado = (texto.length * 120 / velocidad) + 1500;
+            setTimeout(ejecutarFinal, tiempoEstimado);
+
+            synth.speak(utterance);
         }
-    }
 
-    function programarSiguienteAutomatico() {
-        if (!esModoAuto) return;
-        const segundosPausa = parseInt(document.getElementById("pausa").value, 10) * 1000;
-        autoTimer = setTimeout(() => {
-            if (esModoAuto) mostrarSiguiente();
-        }, segundosPausa);
-    }
+        function actualizarProgreso(restantes) {
+            const el = document.getElementById("progreso");
+            if (el) el.innerText = `Restantes en este bloque: ${restantes} de ${tecnicas.length}`;
+        }
 
-    function mostrarSiguiente() {
-        clearTimeout(autoTimer);
-        tecnicaActual = obtenerSiguienteTecnica();
-        document.getElementById("tecnica").innerText = tecnicaActual;
+        function obtenerSiguienteTecnica() {
+            const modo = document.getElementById("modo").value;
 
-        hablar(tecnicaActual, () => {
-            if (esModoAuto) programarSiguienteAutomatico();
+            if (modo === "orden") {
+                index++;
+                if (index >= tecnicas.length) index = 0;
+                actualizarProgreso(tecnicas.length - index);
+                return tecnicas[index];
+            } else {
+                if (tecnicasPendientesRandom.length === 0) {
+                    tecnicasPendientesRandom = [...tecnicas];
+                }
+                const randomIndex = Math.floor(Math.random() * tecnicasPendientesRandom.length);
+                const seleccionada = tecnicasPendientesRandom.splice(randomIndex, 1)[0];
+                actualizarProgreso(tecnicasPendientesRandom.length);
+                return seleccionada;
+            }
+        }
+
+        function programarSiguienteAutomatico() {
+            if (!esModoAuto) return;
+            const segundosPausa = parseInt(document.getElementById("pausa").value, 10) * 1000;
+            autoTimer = setTimeout(() => {
+                if (esModoAuto) mostrarSiguiente();
+            }, segundosPausa);
+        }
+
+        function mostrarSiguiente() {
+            clearTimeout(autoTimer);
+            tecnicaActual = obtenerSiguienteTecnica();
+            const el = document.getElementById("tecnica");
+            if (el) el.innerText = tecnicaActual;
+
+            hablar(tecnicaActual, () => {
+                if (esModoAuto) programarSiguienteAutomatico();
+            });
+        }
+
+        function detenerAuto() {
+            esModoAuto = false;
+            clearTimeout(autoTimer);
+            if (synth) synth.cancel();
+            const btn = document.getElementById("btnAuto");
+            if (btn) {
+                btn.innerText = "▶ Iniciar Modo Auto";
+                btn.classList.remove("activo");
+            }
+        }
+
+        function toggleAuto() {
+            if (synth) synth.resume();
+            const btn = document.getElementById("btnAuto");
+            if (esModoAuto) {
+                detenerAuto();
+            } else {
+                esModoAuto = true;
+                if (btn) {
+                    btn.innerText = "⏹ Detener Auto";
+                    btn.classList.add("activo");
+                }
+                mostrarSiguiente();
+            }
+        }
+
+        // Inicialización segura para Safari online
+        if (synth) {
+            synth.onvoiceschanged = cargarVoces;
+        }
+
+        document.getElementById("velocidad").addEventListener("input", (e) => {
+            document.getElementById("valVelocidad").innerText = e.target.value;
         });
-    }
 
-    function detenerAuto() {
-        esModoAuto = false;
-        clearTimeout(autoTimer);
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        const btn = document.getElementById("btnAuto");
-        btn.innerText = "▶ Iniciar Modo Auto";
-        btn.classList.remove("activo");
-    }
+        document.getElementById("pausa").addEventListener("input", (e) => {
+            document.getElementById("valPausa").innerText = e.target.value;
+        });
 
-    function toggleAuto() {
-        if ('speechSynthesis' in window) window.speechSynthesis.resume();
-        const btn = document.getElementById("btnAuto");
-        if (esModoAuto) {
-            detenerAuto();
-        } else {
-            esModoAuto = true;
-            btn.innerText = "⏹ Detener Auto";
-            btn.classList.add("activo");
+        document.getElementById("modo").addEventListener("change", () => {
+            index = -1;
+            tecnicasPendientesRandom = [...tecnicas];
+            document.getElementById("tecnica").innerText = "Modo cambiado.";
+            actualizarProgreso(tecnicas.length);
+            if (esModoAuto) detenerAuto();
+        });
+
+        document.getElementById("btnAuto").addEventListener("click", toggleAuto);
+
+        document.getElementById("siguiente").addEventListener("click", () => {
+            if (synth) synth.resume();
+            if (esModoAuto) detenerAuto();
             mostrarSiguiente();
-        }
-    }
+        });
 
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = cargarVoces;
-    }
+        document.getElementById("repetir").addEventListener("click", () => {
+            if (synth) synth.resume();
+            if (tecnicaActual) hablar(tecnicaActual);
+        });
 
-    document.getElementById("velocidad").addEventListener("input", (e) => {
-        document.getElementById("valVelocidad").innerText = e.target.value;
+        // Intentos múltiples para cargar voces en Safari
+        cargarVoces();
+        setTimeout(cargarVoces, 250);
+        setTimeout(cargarVoces, 1000);
+        document.addEventListener('touchstart', cargarVoces, { once: true });
+        document.addEventListener('click', cargarVoces, { once: true });
     });
-
-    document.getElementById("pausa").addEventListener("input", (e) => {
-        document.getElementById("valPausa").innerText = e.target.value;
-    });
-
-    document.getElementById("modo").addEventListener("change", () => {
-        index = -1;
-        tecnicasPendientesRandom = [...tecnicas];
-        document.getElementById("tecnica").innerText = "Modo cambiado.";
-        document.getElementById("progreso").innerText = `Restantes en este bloque: ${tecnicas.length}`;
-        if (esModoAuto) detenerAuto();
-    });
-
-    document.getElementById("btnAuto").addEventListener("click", toggleAuto);
-    document.getElementById("siguiente").addEventListener("click", () => {
-        if ('speechSynthesis' in window) window.speechSynthesis.resume();
-        if (esModoAuto) detenerAuto();
-        mostrarSiguiente();
-    });
-    document.getElementById("repetir").addEventListener("click", () => {
-        if ('speechSynthesis' in window) window.speechSynthesis.resume();
-        if (tecnicaActual) hablar(tecnicaActual);
-    });
-
-    cargarVoces();
-    document.addEventListener('click', cargarVoces, { once: true });
 </script>
 </body>
 </html>
