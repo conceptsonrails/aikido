@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización Aikido 1er Dan</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background-color: #f8f9fa; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 650px; margin: 0 auto; }
+        .config { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 0.85em; font-weight: bold; color: #555; }
+        button, select, input { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; }
+        button { background-color: #2b3a4a; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background-color: #1d2631; }
+        button.btn-auto { background-color: #27ae60; }
+        button.btn-auto.activo { background-color: #e74c3c; }
+        #tecnica-display { text-align: center; margin: 30px 0; min-height: 80px; }
+        .tecnica-texto { font-size: 1.6em; font-weight: bold; color: #1a252f; }
+        .contador { font-size: 0.9em; color: #7f8c8d; margin-top: 10px; }
+        .controles { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🥋 Preparación 1er Dan - Visualización</h1>
+
+    <div class="config">
+        <div class="field">
+            <label for="modo">Modo:</label>
+            <select id="modo">
+                <option value="orden">Orden Secuencial</option>
+                <option value="random">Orden Aleatorio</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="voz">Voz:</label>
+            <select id="voz"></select>
+        </div>
+
+        <div class="field">
+            <label for="velocidad">Velocidad (<span id="valVelocidad">0.75</span>x):</label>
+            <input type="range" id="velocidad" min="0.5" max="1.1" step="0.05" value="0.75">
+        </div>
+
+        <div class="field">
+            <label for="pausa">Pausa tras hablar (<span id="valPausa">5</span>s):</label>
+            <input type="range" id="pausa" min="2" max="15" step="1" value="5">
+        </div>
+    </div>
+
+    <div id="tecnica-display">
+        <div class="tecnica-texto" id="tecnica">Pulsa "Siguiente" o "Iniciar Modo Auto"</div>
+        <div class="contador" id="progreso">Restantes en este bloque: -</div>
+    </div>
+
+    <div class="controles">
+        <button id="btnAuto" class="btn-auto" style="flex: 2;">▶ Iniciar Modo Auto</button>
+        <button id="siguiente" style="flex: 1;">Siguiente</button>
+        <button id="repetir" style="flex: 1;">Repetir</button>
+    </div>
+</div>
+
+<script>
+    const tecnicas = [
+        "katadori-menuchi nikkyo omote ya ura",
+        "katadori-menuchi iriminague",
+        "katadori-menuchi shijonague omote",
+        "katadori-menuchi kotegaeshi",
+        "katadori-menuchi koshinague",
+        "chudan-tsuki - medio",
+        "chudan-tsuki ikkyo omote ya ura",
+        "chudan-tsuki kotegaeshi",
+        "chudan-tsuki sotokaitennague",
+        "chudan-tsuki hijikimeosae",
+        "chudan-tsuki uchikaiten sankyo",
+        "jodan-tsuki - arriba",
+        "jodan-tsuki ikkyo omote ya ura",
+        "jodan-tsuki shijonague omote",
+        "maegueri iriminage",
+        "maegueri kokyu-ho",
+        "ushirowaza ryokatadori ikkyo omote",
+        "ushirowaza ryokatadori kokyunague",
+        "ushirowaza ryokatadori kokyu-ho",
+        "ushirowaza ryokatadori aikiotoshi",
+        "eridori ikkyo",
+        "katatedori-kubishime sankyo",
+        "katatedori-kubishime koshinague",
+        "katatedori-kubishime kokyonague",
+        "hanmihandachiwaza ryotedori shijonague omote ya ura",
+        "hanmihandachiwaza ryotedori kokyunague",
+        "hanmihandachiwaza shomen-uchi iriminague",
+        "chiuwaza shomen-uchi",
+        "chuiuwaza ushirowaza toriwaza"
+    ];
+
+    let index = -1;
+    let vocesDisponibles = [];
+    let tecnicasPendientesRandom = [...tecnicas];
+    let tecnicaActual = "";
+    let autoTimer = null;
+    let esModoAuto = false;
+
+    function cargarVoces() {
+        vocesDisponibles = speechSynthesis.getVoices();
+        const selectVoz = document.getElementById("voz");
+        selectVoz.innerHTML = "";
+
+        const vocesEspanyol = vocesDisponibles.filter(v => v.lang.toLowerCase().startsWith('es'));
+
+        vocesEspanyol.forEach(voz => {
+            const option = document.createElement("option");
+            option.value = voz.name;
+            option.textContent = `${voz.name} (${voz.lang})`;
+            selectVoz.appendChild(option);
+        });
+    }
+
+    function hablar(texto, alTerminar) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(texto);
+        const selectVoz = document.getElementById("voz");
+        const velocidad = parseFloat(document.getElementById("velocidad").value);
+
+        utterance.rate = velocidad;
+
+        if (selectVoz.value && vocesDisponibles.length > 0) {
+            const vozSeleccionada = vocesDisponibles.find(v => v.name === selectVoz.value);
+            if (vozSeleccionada) utterance.voice = vozSeleccionada;
+        }
+
+        // Evento que salta exactamente cuando la voz termina de hablar
+        utterance.onend = () => {
+            if (alTerminar) alTerminar();
+        };
+
+        speechSynthesis.speak(utterance);
+    }
+
+    function actualizarProgreso(restantes) {
+        document.getElementById("progreso").innerText = `Restantes en este bloque: ${restantes} de ${tecnicas.length}`;
+    }
+
+    function obtenerSiguienteTecnica() {
+        const modo = document.getElementById("modo").value;
+
+        if (modo === "orden") {
+            index++;
+            if (index >= tecnicas.length) {
+                index = 0;
+            }
+            actualizarProgreso(tecnicas.length - index);
+            return tecnicas[index];
+        } else {
+            if (tecnicasPendientesRandom.length === 0) {
+                tecnicasPendientesRandom = [...tecnicas];
+            }
+            const randomIndex = Math.floor(Math.random() * tecnicasPendientesRandom.length);
+            const seleccionada = tecnicasPendientesRandom.splice(randomIndex, 1)[0];
+            actualizarProgreso(tecnicasPendientesRandom.length);
+            return seleccionada;
+        }
+    }
+
+    function programarSiguienteAutomatico() {
+        if (!esModoAuto) return;
+
+        const segundosPausa = parseInt(document.getElementById("pausa").value, 10) * 1000;
+
+        autoTimer = setTimeout(() => {
+            if (esModoAuto) {
+                mostrarSiguiente();
+            }
+        }, segundosPausa);
+    }
+
+    function mostrarSiguiente() {
+        clearTimeout(autoTimer);
+        tecnicaActual = obtenerSiguienteTecnica();
+        document.getElementById("tecnica").innerText = tecnicaActual;
+
+        // Habla la técnica y, CUANDO TERMINA de hablar, espera los segundos del slider
+        hablar(tecnicaActual, () => {
+            if (esModoAuto) {
+                programarSiguienteAutomatico();
+            }
+        });
+    }
+
+    function detenerAuto() {
+        esModoAuto = false;
+        clearTimeout(autoTimer);
+        speechSynthesis.cancel();
+        const btn = document.getElementById("btnAuto");
+        btn.innerText = "▶ Iniciar Modo Auto";
+        btn.classList.remove("activo");
+    }
+
+    function toggleAuto() {
+        const btn = document.getElementById("btnAuto");
+        if (esModoAuto) {
+            detenerAuto();
+        } else {
+            esModoAuto = true;
+            btn.innerText = "⏹ Detener Auto";
+            btn.classList.add("activo");
+            mostrarSiguiente();
+        }
+    }
+
+    // Eventos UI
+    document.getElementById("velocidad").addEventListener("input", (e) => {
+        document.getElementById("valVelocidad").innerText = e.target.value;
+    });
+
+    document.getElementById("pausa").addEventListener("input", (e) => {
+        document.getElementById("valPausa").innerText = e.target.value;
+    });
+
+    document.getElementById("modo").addEventListener("change", () => {
+        index = -1;
+        tecnicasPendientesRandom = [...tecnicas];
+        document.getElementById("tecnica").innerText = "Modo cambiado.";
+        document.getElementById("progreso").innerText = `Restantes en este bloque: ${tecnicas.length}`;
+        if (esModoAuto) detenerAuto();
+    });
+
+    cargarVoces();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = cargarVoces;
+    }
+
+    document.getElementById("btnAuto").addEventListener("click", toggleAuto);
+
+    document.getElementById("siguiente").addEventListener("click", () => {
+        if (esModoAuto) detenerAuto();
+        mostrarSiguiente();
+    });
+
+    document.getElementById("repetir").addEventListener("click", () => {
+        if (tecnicaActual) hablar(tecnicaActual);
+    });
+</script>
+</body>
+</html>
