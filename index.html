@@ -37,7 +37,9 @@
 
         <div class="field">
             <label for="voz">Voz:</label>
-            <select id="voz"></select>
+            <select id="voz">
+                <option value="">Toca la pantalla para cargar voces...</option>
+            </select>
         </div>
 
         <div class="field">
@@ -52,7 +54,7 @@
     </div>
 
     <div id="tecnica-display">
-        <div class="tecnica-texto" id="tecnica">Pulsa "Siguiente" o "Iniciar Modo Auto"</div>
+        <div class="tecnica-texto" id="tecnica">Toca cualquier botón para empezar</div>
         <div class="contador" id="progreso">Restantes en este bloque: -</div>
     </div>
 
@@ -106,9 +108,15 @@
     function cargarVoces() {
         vocesDisponibles = speechSynthesis.getVoices();
         const selectVoz = document.getElementById("voz");
-        selectVoz.innerHTML = "";
 
-        const vocesEspanyol = vocesDisponibles.filter(v => v.lang.toLowerCase().startsWith('es'));
+        if (!vocesDisponibles || vocesDisponibles.length === 0) return;
+
+        // Filtrar voces en español (o mostrar todas si no hay filtro de idioma estricto)
+        let vocesEspanyol = vocesDisponibles.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+        if (vocesEspanyol.length === 0) vocesEspanyol = vocesDisponibles;
+
+        const valorPrevio = selectVoz.value;
+        selectVoz.innerHTML = "";
 
         vocesEspanyol.forEach(voz => {
             const option = document.createElement("option");
@@ -116,6 +124,10 @@
             option.textContent = `${voz.name} (${voz.lang})`;
             selectVoz.appendChild(option);
         });
+
+        if (valorPrevio && vocesEspanyol.some(v => v.name === valorPrevio)) {
+            selectVoz.value = valorPrevio;
+        }
     }
 
     function hablar(texto, alTerminar) {
@@ -132,8 +144,11 @@
             if (vozSeleccionada) utterance.voice = vozSeleccionada;
         }
 
-        // Evento que salta exactamente cuando la voz termina de hablar
         utterance.onend = () => {
+            if (alTerminar) alTerminar();
+        };
+
+        utterance.onerror = () => {
             if (alTerminar) alTerminar();
         };
 
@@ -149,9 +164,7 @@
 
         if (modo === "orden") {
             index++;
-            if (index >= tecnicas.length) {
-                index = 0;
-            }
+            if (index >= tecnicas.length) index = 0;
             actualizarProgreso(tecnicas.length - index);
             return tecnicas[index];
         } else {
@@ -171,9 +184,7 @@
         const segundosPausa = parseInt(document.getElementById("pausa").value, 10) * 1000;
 
         autoTimer = setTimeout(() => {
-            if (esModoAuto) {
-                mostrarSiguiente();
-            }
+            if (esModoAuto) mostrarSiguiente();
         }, segundosPausa);
     }
 
@@ -182,11 +193,8 @@
         tecnicaActual = obtenerSiguienteTecnica();
         document.getElementById("tecnica").innerText = tecnicaActual;
 
-        // Habla la técnica y, CUANDO TERMINA de hablar, espera los segundos del slider
         hablar(tecnicaActual, () => {
-            if (esModoAuto) {
-                programarSiguienteAutomatico();
-            }
+            if (esModoAuto) programarSiguienteAutomatico();
         });
     }
 
@@ -211,7 +219,23 @@
         }
     }
 
-    // Eventos UI
+    // Inicializaciones y parches para móviles
+    function inicializarVocesMovil() {
+        cargarVoces();
+        // Si aún está vacío, reintentamos en medio segundo
+        if (vocesDisponibles.length === 0) {
+            setTimeout(cargarVoces, 500);
+        }
+    }
+
+    // Eventos de toque para desbloquear audio y voces en iOS/Android
+    window.addEventListener('touchstart', inicializarVocesMovil, { once: true });
+    window.addEventListener('click', inicializarVocesMovil);
+
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = cargarVoces;
+    }
+
     document.getElementById("velocidad").addEventListener("input", (e) => {
         document.getElementById("valVelocidad").innerText = e.target.value;
     });
@@ -228,21 +252,17 @@
         if (esModoAuto) detenerAuto();
     });
 
-    cargarVoces();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = cargarVoces;
-    }
-
     document.getElementById("btnAuto").addEventListener("click", toggleAuto);
-
     document.getElementById("siguiente").addEventListener("click", () => {
         if (esModoAuto) detenerAuto();
         mostrarSiguiente();
     });
-
     document.getElementById("repetir").addEventListener("click", () => {
         if (tecnicaActual) hablar(tecnicaActual);
     });
+
+    // Carga inicial al arrancar
+    cargarVoces();
 </script>
 </body>
 </html>
