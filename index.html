@@ -66,7 +66,7 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    function inicializarApp() {
         const tecnicas = [
             "katadori-menuchi nikkyo omote ya ura",
             "katadori-menuchi iriminague",
@@ -149,10 +149,10 @@
                 synth.cancel();
             } catch (e) {}
 
-            // Safari requiere instanciación limpia por cada llamada
             const utterance = new SpeechSynthesisUtterance(texto);
             const selectVoz = document.getElementById("voz");
-            const velocidad = parseFloat(document.getElementById("velocidad").value) || 0.75;
+            const elemVelocidad = document.getElementById("velocidad");
+            const velocidad = elemVelocidad ? parseFloat(elemVelocidad.value) : 0.75;
 
             utterance.lang = 'es-ES';
             utterance.rate = velocidad;
@@ -173,7 +173,6 @@
             utterance.onend = ejecutarFinal;
             utterance.onerror = ejecutarFinal;
 
-            // Fallback para bug de Safari donde 'onend' a veces no dispara
             const tiempoEstimado = (texto.length * 120 / velocidad) + 1500;
             setTimeout(ejecutarFinal, tiempoEstimado);
 
@@ -186,7 +185,8 @@
         }
 
         function obtenerSiguienteTecnica() {
-            const modo = document.getElementById("modo").value;
+            const modoEl = document.getElementById("modo");
+            const modo = modoEl ? modoEl.value : "orden";
 
             if (modo === "orden") {
                 index++;
@@ -206,7 +206,8 @@
 
         function programarSiguienteAutomatico() {
             if (!esModoAuto) return;
-            const segundosPausa = parseInt(document.getElementById("pausa").value, 10) * 1000;
+            const pausaEl = document.getElementById("pausa");
+            const segundosPausa = (pausaEl ? parseInt(pausaEl.value, 10) : 5) * 1000;
             autoTimer = setTimeout(() => {
                 if (esModoAuto) mostrarSiguiente();
             }, segundosPausa);
@@ -249,47 +250,55 @@
             }
         }
 
-        // Inicialización segura para Safari online
         if (synth) {
             synth.onvoiceschanged = cargarVoces;
         }
 
-        document.getElementById("velocidad").addEventListener("input", (e) => {
-            document.getElementById("valVelocidad").innerText = e.target.value;
+        // Asignación segura con comprobación opcional (Optional Chaining)
+        document.getElementById("velocidad")?.addEventListener("input", (e) => {
+            const val = document.getElementById("valVelocidad");
+            if (val) val.innerText = e.target.value;
         });
 
-        document.getElementById("pausa").addEventListener("input", (e) => {
-            document.getElementById("valPausa").innerText = e.target.value;
+        document.getElementById("pausa")?.addEventListener("input", (e) => {
+            const val = document.getElementById("valPausa");
+            if (val) val.innerText = e.target.value;
         });
 
-        document.getElementById("modo").addEventListener("change", () => {
+        document.getElementById("modo")?.addEventListener("change", () => {
             index = -1;
             tecnicasPendientesRandom = [...tecnicas];
-            document.getElementById("tecnica").innerText = "Modo cambiado.";
+            const tec = document.getElementById("tecnica");
+            if (tec) tec.innerText = "Modo cambiado.";
             actualizarProgreso(tecnicas.length);
             if (esModoAuto) detenerAuto();
         });
 
-        document.getElementById("btnAuto").addEventListener("click", toggleAuto);
+        document.getElementById("btnAuto")?.addEventListener("click", toggleAuto);
 
-        document.getElementById("siguiente").addEventListener("click", () => {
+        document.getElementById("siguiente")?.addEventListener("click", () => {
             if (synth) synth.resume();
             if (esModoAuto) detenerAuto();
             mostrarSiguiente();
         });
 
-        document.getElementById("repetir").addEventListener("click", () => {
+        document.getElementById("repetir")?.addEventListener("click", () => {
             if (synth) synth.resume();
             if (tecnicaActual) hablar(tecnicaActual);
         });
 
-        // Intentos múltiples para cargar voces en Safari
         cargarVoces();
-        setTimeout(cargarVoces, 250);
-        setTimeout(cargarVoces, 1000);
+        setTimeout(cargarVoces, 300);
         document.addEventListener('touchstart', cargarVoces, { once: true });
         document.addEventListener('click', cargarVoces, { once: true });
-    });
+    }
+
+    // Asegurar que el DOM esté completamente cargado antes de ejecutar
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", inicializarApp);
+    } else {
+        inicializarApp();
+    }
 </script>
 </body>
 </html>
