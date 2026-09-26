@@ -5,20 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aikido Visualization - Kyu Selector</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background-color: #f8f9fa; color: #333; }
-    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 680px; margin: 0 auto; }
-    .config { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .field { display: flex; flex-direction: column; gap: 5px; }
-    label { font-size: 0.85em; font-weight: bold; color: #555; }
-    button, select, input { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 8px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.4em;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .config {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8em; font-weight: bold; color: #555; }
+    button, select, input {
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+    }
     button { background-color: #2b3a4a; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
     button:hover { background-color: #1d2631; }
     button.btn-auto { background-color: #27ae60; }
     button.btn-auto.activo { background-color: #e74c3c; }
-    #tecnica-display { text-align: center; margin: 20px 0; min-height: 80px; }
-    .tecnica-texto { font-size: 1.6em; font-weight: bold; color: #1a252f; }
-    .contador { font-size: 0.9em; color: #7f8c8d; margin-top: 10px; }
-    .controles { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+
+    #tecnica-display { text-align: center; margin: 15px 0; min-height: 60px; }
+    .tecnica-texto { font-size: 1.3em; font-weight: bold; color: #1a252f; line-height: 1.2; }
+    .contador { font-size: 0.85em; color: #7f8c8d; margin-top: 6px; }
+
+    .controles { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
 
     /* Contenedor del reproductor de vídeo */
     .video-container {
@@ -29,7 +62,7 @@
       overflow: hidden;
       border-radius: 8px;
       background: #000;
-      margin-top: 15px;
+      margin-top: 10px;
     }
     .video-container iframe {
       position: absolute;
@@ -40,7 +73,7 @@
       border: 0;
     }
     .btn-fallback {
-      display: inline-block;
+      display: block;
       width: 100%;
       background-color: #e74c3c;
       color: white;
@@ -49,7 +82,15 @@
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 15px;
+      margin-top: 10px;
+    }
+
+    @media (min-width: 600px) {
+      body { margin: 20px; }
+      .card { padding: 25px; }
+      h1 { font-size: 1.8em; }
+      .tecnica-texto { font-size: 1.6em; }
+      .config { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
     }
   </style>
 </head>
@@ -102,7 +143,7 @@
       </div>
 
       <div class="field">
-        <label for="pausa">Auto Mode Pause (<span id="valPausa">5</span>s):</label>
+        <label for="pausa">Auto Pause (<span id="valPausa">5</span>s):</label>
         <input type="range" id="pausa" min="2" max="15" step="1" value="5">
       </div>
     </div>
@@ -126,7 +167,7 @@
     function inicializarApp() {
       const baseDeDatosTecnicas = [
       // --- 2019 SYLLABUS (CURRENT) ---
-      { nombre: "tachiwaza katatedori ikkyo omote ya ura", kyu: 6, programa: "2019", youtubeId: "i6jLritlzww" },
+      { nombre: "tachiwaza katatedori ikkyo omote ya ura", kyu: 6, programa: "2019", youtubeId: "WG3FmJtdIf4" },
       { nombre: "tachiwaza katatedori shihonage omote ya ura", kyu: 6, programa: "2019", youtubeId: "" },
       { nombre: "tachiwaza katatedori iriminage", kyu: 6, programa: "2019", youtubeId: "" },
       { nombre: "suwariwaza ryotedori kokyuho", kyu: 6, programa: "2019", youtubeId: "" },
