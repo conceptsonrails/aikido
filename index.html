@@ -124,8 +124,6 @@
 
   <script>
     function inicializarApp() {
-      // Agrega la ID del video de YouTube en la propiedad youtubeId
-      // Ejemplo: para https://www.youtube.com/watch?v=dQw4w9WgXcQ la ID es "dQw4w9WgXcQ"
       const baseDeDatosTecnicas = [
       // --- 2019 SYLLABUS (CURRENT) ---
       { nombre: "tachiwaza katatedori ikkyo omote ya ura", kyu: 6, programa: "2019", youtubeId: "WG3FmJtdIf4" },
@@ -266,7 +264,6 @@
         });
 
         if (prog === "todos") {
-          // Filtrar duplicados por nombre manteniendo la primera ocurrencia
           const visto = new Set();
           lista = lista.filter(t => {
             if (visto.has(t.nombre)) return false;
@@ -284,6 +281,8 @@
 
         actualizarProgreso(tecnicasFiltradas.length);
         if (esModoAuto) detenerAuto();
+
+        renderizarVideo(null);
       }
 
       function cargarVoces() {
@@ -374,18 +373,21 @@
         if (!videoArea) return;
 
         if (tecnica && tecnica.youtubeId && tecnica.youtubeId.trim() !== "") {
+          const videoUrl = `https://www.youtube.com/watch?v=${tecnica.youtubeId}`;
           videoArea.innerHTML = `
             <div class="video-container">
               <iframe
-                src="https://www.youtube.com/embed/${tecnica.youtubeId}?autoplay=1&rel=0"
+                src="https://www.youtube.com/embed/${tecnica.youtubeId}?autoplay=0&rel=0"
                 title="${tecnica.nombre}"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen>
               </iframe>
             </div>
+            <p style="text-align: center; font-size: 0.85em; margin-top: 5px;">
+              ¿Problemas con el reproductor? <a href="${videoUrl}" target="_blank" style="color: #e74c3c; font-weight: bold;">Abrir directamente en YouTube ↗</a>
+            </p>
           `;
         } else if (tecnica && tecnica.nombre) {
-          // Si no hay ID, mostrar botón fallback de búsqueda
           const query = encodeURIComponent(`Aikido ${tecnica.nombre}`);
           videoArea.innerHTML = `
             <button class="btn-fallback" onclick="window.open('https://www.youtube.com/results?search_query=${query}', '_blank')">
@@ -435,7 +437,9 @@
         const el = document.getElementById("tecnica");
         if (objetoTecnicaActual) {
           if (el) el.innerText = objetoTecnicaActual.nombre;
+
           renderizarVideo(objetoTecnicaActual);
+
           hablar(objetoTecnicaActual.nombre, () => {
             if (esModoAuto) programarSiguienteAutomatico();
           });
