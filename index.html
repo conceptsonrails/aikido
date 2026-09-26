@@ -425,14 +425,14 @@
               </iframe>
             </div>
             <p style="text-align: center; font-size: 0.85em; margin-top: 5px;">
-              ¿Problemas con el reproductor? <a href="${videoUrl}" target="_blank" style="color: #e74c3c; font-weight: bold;">Abrir directamente en YouTube ↗</a>
+              <a href="${videoUrl}" target="_blank" style="color: #e74c3c; font-weight: bold;">Open in YouTube ↗</a>
             </p>
           `;
         } else if (tecnica && tecnica.nombre) {
           const query = encodeURIComponent(`Aikido ${tecnica.nombre}`);
           videoArea.innerHTML = `
             <button class="btn-fallback" onclick="window.open('https://www.youtube.com/results?search_query=${query}', '_blank')">
-              🔍 Buscar "${tecnica.nombre}" en YouTube (Sin ID asignado)
+              🔍 Search "${tecnica.nombre}" in YouTube (Sin ID asignado)
             </button>
           `;
         } else {
