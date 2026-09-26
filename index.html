@@ -10,15 +10,47 @@
     .config { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .field { display: flex; flex-direction: column; gap: 5px; }
     label { font-size: 0.85em; font-weight: bold; color: #555; }
-    button, select, input { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; }
+    button, select, input { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
     button { background-color: #2b3a4a; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
     button:hover { background-color: #1d2631; }
     button.btn-auto { background-color: #27ae60; }
     button.btn-auto.activo { background-color: #e74c3c; }
-    #tecnica-display { text-align: center; margin: 30px 0; min-height: 80px; }
+    #tecnica-display { text-align: center; margin: 20px 0; min-height: 80px; }
     .tecnica-texto { font-size: 1.6em; font-weight: bold; color: #1a252f; }
     .contador { font-size: 0.9em; color: #7f8c8d; margin-top: 10px; }
-    .controles { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .controles { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+
+    /* Contenedor del reproductor de vídeo */
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* Relación de aspecto 16:9 */
+      height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #000;
+      margin-top: 15px;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .btn-fallback {
+      display: inline-block;
+      width: 100%;
+      background-color: #e74c3c;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
@@ -85,134 +117,139 @@
       <button id="siguiente" style="flex: 1;">Next</button>
       <button id="repetir" style="flex: 1;">Repeat</button>
     </div>
+
+    <!-- Área de vídeo dinámico -->
+    <div id="videoArea"></div>
   </div>
 
   <script>
     function inicializarApp() {
+      // Agrega la ID del video de YouTube en la propiedad youtubeId
+      // Ejemplo: para https://www.youtube.com/watch?v=dQw4w9WgXcQ la ID es "dQw4w9WgXcQ"
       const baseDeDatosTecnicas = [
       // --- 2019 SYLLABUS (CURRENT) ---
-      { nombre: "tachiwaza katatedori ikkyo omote ya ura", kyu: 6, programa: "2019" },
-      { nombre: "tachiwaza katatedori shihonage omote ya ura", kyu: 6, programa: "2019" },
-      { nombre: "tachiwaza katatedori iriminage", kyu: 6, programa: "2019" },
-      { nombre: "suwariwaza ryotedori kokyuho", kyu: 6, programa: "2019" },
+      { nombre: "tachiwaza katatedori ikkyo omote ya ura", kyu: 6, programa: "2019", youtubeId: "UF8HxjDCFEM" },
+      { nombre: "tachiwaza katatedori shihonage omote ya ura", kyu: 6, programa: "2019", youtubeId: "" },
+      { nombre: "tachiwaza katatedori iriminage", kyu: 6, programa: "2019", youtubeId: "" },
+      { nombre: "suwariwaza ryotedori kokyuho", kyu: 6, programa: "2019", youtubeId: "" },
 
-      { nombre: "shomenuchi ikkyo omote ya ura", kyu: 5, programa: "2019" },
-      { nombre: "shomenuchi iriminage", kyu: 5, programa: "2019" },
-      { nombre: "katatedori ikkyo omote ya ura", kyu: 5, programa: "2019" },
-      { nombre: "katatedori nikkyo omote ya ura", kyu: 5, programa: "2019" },
-      { nombre: "katatedori shihonage omote ya ura", kyu: 5, programa: "2019" },
-      { nombre: "katatedori uchikaitennage", kyu: 5, programa: "2019" },
+      { nombre: "shomenuchi ikkyo omote ya ura", kyu: 5, programa: "2019", youtubeId: "" },
+      { nombre: "shomenuchi iriminage", kyu: 5, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori ikkyo omote ya ura", kyu: 5, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori nikkyo omote ya ura", kyu: 5, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori shihonage omote ya ura", kyu: 5, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori uchikaitennage", kyu: 5, programa: "2019", youtubeId: "" },
 
-      { nombre: "shomenuchi nikkyo omote ya ura", kyu: 4, programa: "2019" },
-      { nombre: "shomenuchi kotegaeshi", kyu: 4, programa: "2019" },
-      { nombre: "yokomenuchi shihonage omote ya ura", kyu: 4, programa: "2019" },
-      { nombre: "katatedori sankyo omote ya ura", kyu: 4, programa: "2019" },
-      { nombre: "katatedori sotokaitennage", kyu: 4, programa: "2019" },
-      { nombre: "ryotedori tenchinage", kyu: 4, programa: "2019" },
-      { nombre: "suwariwaza shomenuchi ikkyo omote ya ura", kyu: 4, programa: "2019" },
+      { nombre: "shomenuchi nikkyo omote ya ura", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "shomenuchi kotegaeshi", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi shihonage omote ya ura", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori sankyo omote ya ura", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori sotokaitennage", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "ryotedori tenchinage", kyu: 4, programa: "2019", youtubeId: "" },
+      { nombre: "suwariwaza shomenuchi ikkyo omote ya ura", kyu: 4, programa: "2019", youtubeId: "" },
 
-      { nombre: "shomenuchi sankyo omote ya ura", kyu: 3, programa: "2019" },
-      { nombre: "shomenuchi yonkyo omote ya ura", kyu: 3, programa: "2019" },
-      { nombre: "yokomenuchi ikkyo omote ya ura", kyu: 3, programa: "2019" },
-      { nombre: "yokomenuchi iriminage", kyu: 3, programa: "2019" },
-      { nombre: "yokomenuchi kotegaeshi", kyu: 3, programa: "2019" },
-      { nombre: "chudan tsuki ikkyo omote ya ura", kyu: 3, programa: "2019" },
-      { nombre: "chudan tsuki kotegaeshi", kyu: 3, programa: "2019" },
-      { nombre: "morotedori kokyunage", kyu: 3, programa: "2019" },
-      { nombre: "suwariwaza shomenuchi nikkyo omote ya ura", kyu: 3, programa: "2019" },
-      { nombre: "hanmi handachiwaza katatedori shihonage omote ya ura", kyu: 3, programa: "2019" },
+      { nombre: "shomenuchi sankyo omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "shomenuchi yonkyo omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi ikkyo omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi iriminage", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi kotegaeshi", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "chudan tsuki ikkyo omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "chudan tsuki kotegaeshi", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "morotedori kokyunage", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "suwariwaza shomenuchi nikkyo omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
+      { nombre: "hanmi handachiwaza katatedori shihonage omote ya ura", kyu: 3, programa: "2019", youtubeId: "" },
 
-      { nombre: "shomenuchi gokyo ura", kyu: 2, programa: "2019" },
-      { nombre: "yokomenuchi nikkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "yokomenuchi sankyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "yokomenuchi yonkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "chudan tsuki iriminage", kyu: 2, programa: "2019" },
-      { nombre: "chudan tsuki hijikimeosae", kyu: 2, programa: "2019" },
-      { nombre: "katadori ikkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "katadori nikkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "ushirowaza ryotedori ikkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "ushirowaza ryotedori kotegaeshi", kyu: 2, programa: "2019" },
-      { nombre: "suwariwaza shomenuchi sankyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "suwariwaza shomenuchi yonkyo omote ya ura", kyu: 2, programa: "2019" },
-      { nombre: "hanmi handachiwaza katatedori kaitennage", kyu: 2, programa: "2019" },
+      { nombre: "shomenuchi gokyo ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi nikkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi sankyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "yokomenuchi yonkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "chudan tsuki iriminage", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "chudan tsuki hijikimeosae", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "katadori ikkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "katadori nikkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "ushirowaza ryotedori ikkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "ushirowaza ryotedori kotegaeshi", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "suwariwaza shomenuchi sankyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "suwariwaza shomenuchi yonkyo omote ya ura", kyu: 2, programa: "2019", youtubeId: "" },
+      { nombre: "hanmi handachiwaza katatedori kaitennage", kyu: 2, programa: "2019", youtubeId: "" },
 
-      { nombre: "katadori menuchi ikkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi nikkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi sankyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi yonkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi iriminage", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi shihonage omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi kotegaeshi", kyu: 1, programa: "2019" },
-      { nombre: "katadori menuchi koshinage", kyu: 1, programa: "2019" },
-      { nombre: "jodan tsuki ikkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "jodan tsuki shihonage omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "maegeri iriminage", kyu: 1, programa: "2019" },
-      { nombre: "maegeri kokyuho", kyu: 1, programa: "2019" },
-      { nombre: "ushirowaza ryokatadori ikkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "ushirowaza ryokatadori kokyunage", kyu: 1, programa: "2019" },
-      { nombre: "ushirowaza ryokatadori aikiotoshi", kyu: 1, programa: "2019" },
-      { nombre: "eridori ikkyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katatedori kubishime sankyo omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "katatedori kubishime koshinage", kyu: 1, programa: "2019" },
-      { nombre: "hanmi handachiwaza ryotedori shihonage omote ya ura", kyu: 1, programa: "2019" },
-      { nombre: "hanmi handachiwaza ryotedori kokyunage", kyu: 1, programa: "2019" },
-      { nombre: "hanmi handachiwaza shomenuchi iriminage", kyu: 1, programa: "2019" },
-      { nombre: "jiyuwaza shomenuchi", kyu: 1, programa: "2019" },
-      { nombre: "jiyuwaza ushirowaza", kyu: 1, programa: "2019" },
+      { nombre: "katadori menuchi ikkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi nikkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi sankyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi yonkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi iriminage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi shihonage omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi kotegaeshi", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katadori menuchi koshinage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "jodan tsuki ikkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "jodan tsuki shihonage omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "maegeri iriminage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "maegeri kokyuho", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "ushirowaza ryokatadori ikkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "ushirowaza ryokatadori kokyunage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "ushirowaza ryokatadori aikiotoshi", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "eridori ikkyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori kubishime sankyo omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "katatedori kubishime koshinage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "hanmi handachiwaza ryotedori shihonage omote ya ura", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "hanmi handachiwaza ryotedori kokyunage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "hanmi handachiwaza shomenuchi iriminage", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "jiyuwaza shomenuchi", kyu: 1, programa: "2019", youtubeId: "" },
+      { nombre: "jiyuwaza ushirowaza", kyu: 1, programa: "2019", youtubeId: "" },
 
       // --- 2007 SYLLABUS (OLD) ---
-      { nombre: "katatedori ikkyo omote ya ura", kyu: 6, programa: "2007" },
-      { nombre: "katatedori shihonage omote ya ura", kyu: 6, programa: "2007" },
-      { nombre: "katatedori iriminage", kyu: 6, programa: "2007" },
+      { nombre: "katatedori ikkyo omote ya ura", kyu: 6, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori shihonage omote ya ura", kyu: 6, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori iriminage", kyu: 6, programa: "2007", youtubeId: "" },
 
-      { nombre: "shomenuchi ikkyo omote ya ura", kyu: 5, programa: "2007" },
-      { nombre: "shomenuchi iriminage", kyu: 5, programa: "2007" },
-      { nombre: "katatedori nikkyo omote ya ura", kyu: 5, programa: "2007" },
-      { nombre: "katatedori uchikaitennage", kyu: 5, programa: "2007" },
+      { nombre: "shomenuchi ikkyo omote ya ura", kyu: 5, programa: "2007", youtubeId: "" },
+      { nombre: "shomenuchi iriminage", kyu: 5, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori nikkyo omote ya ura", kyu: 5, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori uchikaitennage", kyu: 5, programa: "2007", youtubeId: "" },
 
-      { nombre: "shomenuchi nikkyo omote ya ura", kyu: 4, programa: "2007" },
-      { nombre: "shomenuchi kotegaeshi", kyu: 4, programa: "2007" },
-      { nombre: "yokomenuchi shihonage omote ya ura", kyu: 4, programa: "2007" },
-      { nombre: "katatedori sankyo omote ya ura", kyu: 4, programa: "2007" },
-      { nombre: "katatedori sotokaitennage", kyu: 4, programa: "2007" },
-      { nombre: "ryotedori tenchinage", kyu: 4, programa: "2007" },
+      { nombre: "shomenuchi nikkyo omote ya ura", kyu: 4, programa: "2007", youtubeId: "" },
+      { nombre: "shomenuchi kotegaeshi", kyu: 4, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi shihonage omote ya ura", kyu: 4, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori sankyo omote ya ura", kyu: 4, programa: "2007", youtubeId: "" },
+      { nombre: "katatedori sotokaitennage", kyu: 4, programa: "2007", youtubeId: "" },
+      { nombre: "ryotedori tenchinage", kyu: 4, programa: "2007", youtubeId: "" },
 
-      { nombre: "shomenuchi sankyo omote ya ura", kyu: 3, programa: "2007" },
-      { nombre: "shomenuchi yonkyo omote ya ura", kyu: 3, programa: "2007" },
-      { nombre: "yokomenuchi ikkyo omote ya ura", kyu: 3, programa: "2007" },
-      { nombre: "yokomenuchi iriminage", kyu: 3, programa: "2007" },
-      { nombre: "yokomenuchi kotegaeshi", kyu: 3, programa: "2007" },
-      { nombre: "chudan tsuki ikkyo omote ya ura", kyu: 3, programa: "2007" },
-      { nombre: "chudan tsuki kotegaeshi", kyu: 3, programa: "2007" },
-      { nombre: "morotedori kokyunage", kyu: 3, programa: "2007" },
+      { nombre: "shomenuchi sankyo omote ya ura", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "shomenuchi yonkyo omote ya ura", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi ikkyo omote ya ura", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi iriminage", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi kotegaeshi", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "chudan tsuki ikkyo omote ya ura", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "chudan tsuki kotegaeshi", kyu: 3, programa: "2007", youtubeId: "" },
+      { nombre: "morotedori kokyunage", kyu: 3, programa: "2007", youtubeId: "" },
 
-      { nombre: "shomenuchi gokyo ura", kyu: 2, programa: "2007" },
-      { nombre: "yokomenuchi nikkyo omote ya ura", kyu: 2, programa: "2007" },
-      { nombre: "yokomenuchi sankyo omote ya ura", kyu: 2, programa: "2007" },
-      { nombre: "yokomenuchi yonkyo omote ya ura", kyu: 2, programa: "2007" },
-      { nombre: "chudan tsuki iriminage", kyu: 2, programa: "2007" },
-      { nombre: "chudan tsuki hijikimeosae", kyu: 2, programa: "2007" },
-      { nombre: "katadori ikkyo omote ya ura", kyu: 2, programa: "2007" },
-      { nombre: "katadori nikkyo omote ya ura", kyu: 2, programa: "2007" },
+      { nombre: "shomenuchi gokyo ura", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi nikkyo omote ya ura", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi sankyo omote ya ura", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "yokomenuchi yonkyo omote ya ura", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "chudan tsuki iriminage", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "chudan tsuki hijikimeosae", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "katadori ikkyo omote ya ura", kyu: 2, programa: "2007", youtubeId: "" },
+      { nombre: "katadori nikkyo omote ya ura", kyu: 2, programa: "2007", youtubeId: "" },
 
-      { nombre: "katadori menuchi ikkyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi nikkyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi sankyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi yonkyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi iriminage", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi shihonage omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "katadori menuchi kotegaeshi", kyu: 1, programa: "2007" },
-      { nombre: "jodan tsuki ikkyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "jodan tsuki shihonage omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "ushirowaza ryotedori ikkyo omote ya ura", kyu: 1, programa: "2007" },
-      { nombre: "ushirowaza ryotedori kotegaeshi", kyu: 1, programa: "2007" }
+      { nombre: "katadori menuchi ikkyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi nikkyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi sankyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi yonkyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi iriminage", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi shihonage omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "katadori menuchi kotegaeshi", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "jodan tsuki ikkyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "jodan tsuki shihonage omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "ushirowaza ryotedori ikkyo omote ya ura", kyu: 1, programa: "2007", youtubeId: "" },
+      { nombre: "ushirowaza ryotedori kotegaeshi", kyu: 1, programa: "2007", youtubeId: "" }
       ];
 
       let tecnicasFiltradas = [];
       let index = -1;
       let vocesDisponibles = [];
       let tecnicasPendientesRandom = [];
-      let tecnicaActual = "";
+      let objetoTecnicaActual = null;
       let autoTimer = null;
       let esModoAuto = false;
 
@@ -222,12 +259,23 @@
         const prog = document.getElementById("programa")?.value || "todos";
         const kyuSel = document.getElementById("kyu")?.value || "todos";
 
-        tecnicasFiltradas = baseDeDatosTecnicas.filter(t => {
+        let lista = baseDeDatosTecnicas.filter(t => {
           const cumplePrograma = (prog === "todos" || t.programa === prog);
           const cumpleKyu = (kyuSel === "todos" || t.kyu.toString() === kyuSel);
           return cumplePrograma && cumpleKyu;
-        }).map(t => t.nombre);
+        });
 
+        if (prog === "todos") {
+          // Filtrar duplicados por nombre manteniendo la primera ocurrencia
+          const visto = new Set();
+          lista = lista.filter(t => {
+            if (visto.has(t.nombre)) return false;
+            visto.add(t.nombre);
+            return true;
+          });
+        }
+
+        tecnicasFiltradas = lista;
         index = -1;
         tecnicasPendientesRandom = [...tecnicasFiltradas];
 
@@ -250,12 +298,10 @@
           return;
         }
 
-        // Priorizar voces en español y finlandés
         let vocesFiltradas = vocesDisponibles.filter(v =>
           v.lang && (v.lang.toLowerCase().startsWith('es') || v.lang.toLowerCase().startsWith('fi'))
         );
 
-        // Si el navegador no ofrece ninguna de las dos, mostrar todas como respaldo
         if (vocesFiltradas.length === 0) {
           vocesFiltradas = vocesDisponibles;
         }
@@ -323,8 +369,36 @@
         if (el) el.innerText = `Remaining in this block: ${restantes} of ${tecnicasFiltradas.length}`;
       }
 
+      function renderizarVideo(tecnica) {
+        const videoArea = document.getElementById("videoArea");
+        if (!videoArea) return;
+
+        if (tecnica && tecnica.youtubeId && tecnica.youtubeId.trim() !== "") {
+          videoArea.innerHTML = `
+            <div class="video-container">
+              <iframe
+                src="https://www.youtube.com/embed/${tecnica.youtubeId}?autoplay=1&rel=0"
+                title="${tecnica.nombre}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
+            </div>
+          `;
+        } else if (tecnica && tecnica.nombre) {
+          // Si no hay ID, mostrar botón fallback de búsqueda
+          const query = encodeURIComponent(`Aikido ${tecnica.nombre}`);
+          videoArea.innerHTML = `
+            <button class="btn-fallback" onclick="window.open('https://www.youtube.com/results?search_query=${query}', '_blank')">
+              🔍 Buscar "${tecnica.nombre}" en YouTube (Sin ID asignado)
+            </button>
+          `;
+        } else {
+          videoArea.innerHTML = "";
+        }
+      }
+
       function obtenerSiguienteTecnica() {
-        if (tecnicasFiltradas.length === 0) return "No techniques available";
+        if (tecnicasFiltradas.length === 0) return null;
 
         const modoEl = document.getElementById("modo");
         const modo = modoEl ? modoEl.value : "orden";
@@ -356,14 +430,18 @@
 
       function mostrarSiguiente() {
         clearTimeout(autoTimer);
-        tecnicaActual = obtenerSiguienteTecnica();
-        const el = document.getElementById("tecnica");
-        if (el) el.innerText = tecnicaActual;
+        objetoTecnicaActual = obtenerSiguienteTecnica();
 
-        if (tecnicasFiltradas.length > 0) {
-          hablar(tecnicaActual, () => {
+        const el = document.getElementById("tecnica");
+        if (objetoTecnicaActual) {
+          if (el) el.innerText = objetoTecnicaActual.nombre;
+          renderizarVideo(objetoTecnicaActual);
+          hablar(objetoTecnicaActual.nombre, () => {
             if (esModoAuto) programarSiguienteAutomatico();
           });
+        } else {
+          if (el) el.innerText = "No techniques available";
+          renderizarVideo(null);
         }
       }
 
@@ -427,7 +505,7 @@
 
       document.getElementById("repetir")?.addEventListener("click", () => {
         if (synth) synth.resume();
-        if (tecnicaActual) hablar(tecnicaActual);
+        if (objetoTecnicaActual) hablar(objetoTecnicaActual.nombre);
       });
 
       cargarVoces();
